@@ -1,104 +1,53 @@
+
 import { books, authors, genres, BOOKS_PER_PAGE } from './data.js'
+import { html, createPreviewElement, createOptionElement} from './helper.js';
 
 let page = 1;
 let matches = books
 
-/* Used an object to store the retrieved elements to make the code more readable 
-  and to prevent repetitive fetching of DOM elements.*/
-const html = {
-   main: {
-      booksDiv: document.querySelector('[data-list-items]'),
-      loadMoreButton: document.querySelector('[data-list-button]'),
-      message: document.querySelector('[data-list-message]')
-    },
-   bookPreview: {
-      overlay: document.querySelector('[ data-list-active]'),
-      Blur: document.querySelector('[data-list-blur]'),
-      Image: document.querySelector('[ data-list-image]'),
-      Title: document.querySelector('[ data-list-title]'),
-      Subtitle: document.querySelector('[data-list-subtitle]'),
-      description: document.querySelector('[data-list-description]'),
-      close: document.querySelector('[data-list-close]')
-   },
-   search: {
-      searchButton: document.querySelector('[data-header-search]'),
-      overlay: document.querySelector('[ data-search-overlay]'),
-      form: document.querySelector('[data-search-form]'),
-      title: document.querySelector('[data-search-title]'),
-      genreSelect: document.querySelector('[data-search-genres]'),
-      authorSelect: document.querySelector('[ data-search-authors]'),
-      close: document.querySelector('[data-search-cancel]'),
-      submit: document.querySelector('[data-search-submit]')
-   },
-   settings: {
-    settingsButton: document.querySelector('[data-header-settings]'),
-    overlay: document.querySelector('[ data-settings-overlay]'),
-    form: document.querySelector('[data-settings-form]'),
-    settingsSelect: document.querySelector('[data-settings-theme]'),
-    close: document.querySelector('[data-settings-cancel]'),
-    submit: document.querySelector('[ data-settings-submit]')
-   },
-}
 
 
-// This part of the code handles the displaying of the books as buttons.
-const starting = document.createDocumentFragment()
+/**
+ * This handles the displaying of the books as buttons
+ * by iterating over the books array using the map method and creating a new array for the returned values of the 
+ * createPreviewElement and then appending the books(buttons) to the booksDiv.
+ * @param {object} book 
+ */ 
+const previewElements = books.map((book) => createPreviewElement(book));
+previewElements.forEach((previewElement) => {
+    html.main.booksDiv.appendChild(previewElement);
+  });
 
-for (const { author, id, image, title } of matches.slice(0, BOOKS_PER_PAGE)) {
-    const element = document.createElement('button')
-    element.classList = 'preview'
-    element.setAttribute('data-preview', id)
 
-    element.innerHTML = `
-        <img
-            class="preview__image"
-            src="${image}"
-        />
-        
-        <div class="preview__info">
-            <h3 class="preview__title">${title}</h3>
-            <div class="preview__author">${authors[author]}</div>
-        </div>
-    `
-
-    starting.appendChild(element)
-}
-
-html.main.booksDiv.appendChild(starting)
-
-/* This part of the code deals with adding all the genres as options in the select field
- as well as adding the All Genres option.*/
-const genreHtml = document.createDocumentFragment()
+  //This part of the code deals with the genre options and adds them to the 
+//select field and also adds the All genres option.
+const genreHtml = document.createDocumentFragment();
 const firstGenreElement = document.createElement('option')
-firstGenreElement.value = 'any'
+firstGenreElement.value = 'any';
 firstGenreElement.innerText = 'All Genres'
-genreHtml.appendChild(firstGenreElement)
+genreHtml.appendChild(firstGenreElement);
+html.search.genreSelect.appendChild(genreHtml)
 
-for (const [id, name] of Object.entries(genres)) {
-    const element = document.createElement('option')
-    element.value = id
-    element.innerText = name
-    genreHtml.appendChild(element)
-}
+Object.entries(genres).map(([value, text]) => {
+    const genreOptions = createOptionElement(value, text);
+    html.search.genreSelect.appendChild(genreOptions);
+  });
+  
 
-html.search.genreSelect.appendChild(genreHtml);
 
-/* This part of the code deals with adding all the author names as options in the select field
-as well as adding the All Authors option.*/
+// This part of the code deals with adding all the author names as options in the select field
+//  as well as adding the All Authors option.
 const authorsHtml = document.createDocumentFragment()
 const firstAuthorElement = document.createElement('option')
 firstAuthorElement.value = 'any'
 firstAuthorElement.innerText = 'All Authors'
 authorsHtml.appendChild(firstAuthorElement)
-
-for (const [id, name] of Object.entries(authors)) {
-    const element = document.createElement('option')
-    element.value = id
-    element.innerText = name
-    authorsHtml.appendChild(element)
-}
-
 html.search.authorSelect.appendChild(authorsHtml)
+
+Object.entries(authors).map(([value, text]) =>{
+    const authorOptions = createOptionElement(value, text);
+    html.search.authorSelect.appendChild(authorOptions)
+})
 
 // This part of the code handles the the day and night theme options. 
 if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -139,8 +88,11 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
      html.bookPreview.overlay.open = false
 })
 
-// The code below handles the theme settings.
- html.settings.form.addEventListener('submit', (event) => {
+/**
+ * The function below handles the settings form and settings option.
+ * @param {object} event 
+ */
+     const handleThemeSettings =  (event) => {
     event.preventDefault()
     const formData = new FormData(event.target)
     const { theme } = Object.fromEntries(formData)
@@ -154,10 +106,15 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
     }
     
     document.querySelector('[data-settings-overlay]').open = false
-})
+}
+ 
+html.settings.form.addEventListener('submit', handleThemeSettings)
 
-// The code below handles the search form.
- html.search.form.addEventListener('submit', (event) => {
+/** 
+ * The function below deals with the search form and filter options.
+ * @param {object} event
+ * */ 
+     const handleSearchForm =  (event) => {
     event.preventDefault()
     const formData = new FormData(event.target)
     const filters = Object.fromEntries(formData)
@@ -222,12 +179,14 @@ if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').match
 
     window.scrollTo({top: 0, behavior: 'smooth'});
     html.search.overlay.open = false
-})
+}
 
-   /**
-    * This function handles the displaying of more books
-    * and handles the show more button.
-    */
+  html.search.form.addEventListener('submit', handleSearchForm)
+   
+   
+    //This function handles the displaying of more books
+    // and handles the show more button.
+
     const loadMoreBooks = () => {
     const fragment = document.createDocumentFragment()
 
